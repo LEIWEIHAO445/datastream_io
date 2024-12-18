@@ -1,0 +1,23 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "catkin_make: build",
+			"type": "shell",
+			"command": "catkin_make",
+			"args": [
+				"-DCMAKE_EXPORT_COMPILE_COMMANDS=Yes"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		}
+	]
+}
