@@ -2,13 +2,13 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "datastream_io",
+            "name": "datastreamio",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/devel/lib/rosbagio/rosbagio", //要调试的可执行文件
+            "program": "${workspaceFolder}/devel/lib/datastreamio/datastreamio", //要调试的可执行文件
             "args": [
-                "/home/leiwh/Research/Data/KAIST/urban38/rosbag/urban38.bag",
-                "/home/leiwh/Research/Data/KAIST/urban38/rosbag/urban38_run.bag"
+                "/home/leiwh/Research/Document/Paper02/Version-02/Data/2023-09-25-03-01-32_maximal/result/ForPaper02/R_RTK/gnss_data_1.pos",
+                "/home/leiwh/Research/Document/Paper02/Version-02/Data/2023-09-25-03-01-32_maximal/rosbag/VisionRTK2_2.bag"
             ],
             "stopAtEntry": false, //设为true则调试运行时会先停在程序开始
             "cwd": "${workspaceFolder}",

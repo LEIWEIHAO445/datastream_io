@@ -1,46 +1,51 @@
-/**
- * @brief
- */
+/** -------------------------------------------------------------------------------------------------------------------------------
+ * @brief     cmnfunc.cpp: the source file defines common functions
+ * @note
+ * ------------------------------------------------------------------------------------------------------------------------------*/
 
 #include "datastream.h"
 
-/**
- * @brief       Copy the string from the src to the dst
- * @note
- *
- * @param[in]   src          char     source string
- * @param[in]   nPos         int      the start location
- * @param[in]   nCount       int      the number of char
- * @param[out]  dst          char     destination string
- *
- * @return      void
- */
-void xstrmid(const char *src, const int nPos, const int nCount, char *dst)
+namespace dataio_common
 {
-    int i;
-    const char *str;
-    char c;
-
-    str = src + nPos;
-
-    for (i = 0; i < nCount; i++)
+    /**
+     * @brief       Copy the string from the src to the dst
+     * @note
+     *
+     * @param[in]   src          char     source string
+     * @param[in]   nPos         int      the start location
+     * @param[in]   nCount       int      the number of char
+     * @param[out]  dst          char     destination string
+     *
+     * @return      void
+     */
+    void xstrmid(const char *src, const int nPos, const int nCount, char *dst)
     {
-        c = *(str + i);
-        if (c)
+        int i;
+        const char *str;
+        char c;
+
+        str = src + nPos;
+
+        for (i = 0; i < nCount; i++)
         {
-            *(dst + i) = c;
+            c = *(str + i);
+            if (c)
+            {
+                *(dst + i) = c;
+            }
+            else
+            {
+                // elimate the '\n' in the end
+                if (dst[i - 1] == '\n')
+                    dst[i - 1] = '\0';
+                *(dst + i) = '\0';
+                break;
+            }
         }
-        else
-        {
-            // elimate the '\n' in the end
-            if (dst[i - 1] == '\n')
-                dst[i - 1] = '\0';
-            *(dst + i) = '\0';
-            break;
-        }
+
+        *(dst + nCount) = '\0';
     }
 
-    *(dst + nCount) = '\0';
 }
 
 namespace gnss_common
@@ -779,297 +784,4 @@ namespace gnss_common
                   { return obs1.prn < obs2.prn; });
     }
 
-    /**
-     * @brief       Convert the GNSS observation data from rtklib struct to IPS struct
-     * @note        It is used to process observation data in one epoch
-     *
-     * @param[in]   obsd_t *          src       observation data in rtklib struct
-     * @param[in]   int               n         satellite number in rtklib
-     * @param[out]  IPS_OBSDATA *     dst       observation data in IPS struct
-     *
-     * @return
-     */
-    void Convert_GNSSObsStruct_RTKLIB2IPS(const obsd_t *src, int n, IPS_OBSDATA *dst)
-    {
-        if (!src || !dst)
-            return;
-
-        ///< 1. Prepare variables
-        int index, sys = 0;
-        char(*frq)[5] = NULL;
-        char gs_strFrq_tmp[NFREQ][5] = {'\0'};
-        IPS_GPSTIME gt;
-
-        ConvertTime(src[0].time, &gt);
-        if (MinusGPSTIME(gt, dst->gt) == 0.0)
-            return;
-
-        // clear the old data body
-        dst->gt = gt;
-        dst->flag = 0;
-        dst->nsat = 0;
-        memset(dst->ngnss, 0, sizeof(int) * IPS_NSYS);
-        dst->obs.clear();
-
-        for (int i = 0; i < n; i++)
-        {
-            if (dst->nsat >= MAXOBS)
-                break;
-
-            IPS_OBSDATA_t iobs;
-            iobs.prn = ConvertPrn(src[i].sat);
-            if (iobs.prn > IPS_NSATMAX || iobs.prn < 1)
-                continue;
-
-            for (int f = 0; f < NFREQ; f++)
-            {
-                std::memset(gs_strFrq_tmp[f], '\0', sizeof(gs_strFrq_tmp[f]));
-            }
-
-            satprn2no(iobs.prn, &sys);
-            if (sys == IPS_SYSGPS)
-            {
-                dst->ngnss[0]++;
-                for (int f = 0; f < NFREQ; f++)
-                    std::memcpy(gs_strFrq_tmp[f], gnss_common::gs_strGPSFrq[f].c_str(), gnss_common::gs_strGPSFrq[f].size() + 1);
-                frq = gs_strFrq_tmp;
-            }
-            else if (sys == IPS_SYSGLO)
-            {
-                dst->ngnss[2]++;
-                for (int f = 0; f < NFREQ; f++)
-                    std::memcpy(gs_strFrq_tmp[f], gnss_common::gs_strGLOFrq[f].c_str(), gnss_common::gs_strGLOFrq[f].size() + 1);
-                frq = gs_strFrq_tmp;
-            }
-            else if (sys == IPS_SYSBD2)
-            {
-                dst->ngnss[2]++;
-                for (int f = 0; f < NFREQ; f++)
-                    std::memcpy(gs_strFrq_tmp[f], gnss_common::gs_strBD2Frq[f].c_str(), gnss_common::gs_strBD2Frq[f].size() + 1);
-                frq = gs_strFrq_tmp;
-            }
-            else if (sys == IPS_SYSBD3)
-            {
-                dst->ngnss[3]++;
-                for (int f = 0; f < NFREQ; f++)
-                    std::memcpy(gs_strFrq_tmp[f], gnss_common::gs_strBD3Frq[f].c_str(), gnss_common::gs_strBD3Frq[f].size() + 1);
-                frq = gs_strFrq_tmp;
-            }
-            else if (sys == IPS_SYSGAL)
-            {
-                dst->ngnss[4]++;
-                for (int f = 0; f < NFREQ; f++)
-                    std::memcpy(gs_strFrq_tmp[f], gnss_common::gs_strGALFrq[f].c_str(), gnss_common::gs_strGALFrq[f].size() + 1);
-                frq = gs_strFrq_tmp;
-            }
-            else if (sys == IPS_SYSQZS)
-            {
-                dst->ngnss[4]++;
-                for (int f = 0; f < NFREQ; f++)
-                    std::memcpy(gs_strFrq_tmp[f], gnss_common::gs_strQZSFrq[f].c_str(), gnss_common::gs_strQZSFrq[f].size() + 1);
-                frq = gs_strFrq_tmp;
-            }
-            else
-                continue;
-
-            for (int f = 0; f < NFREQ; f++)
-            {
-                index = FindFrqIndex(sys, frq + f, src[i]);
-                if (index < 0)
-                    continue;
-                iobs.P[f] = src[i].P[index];
-                iobs.L[f] = src[i].L[index];
-                iobs.D[f] = src[i].D[index];
-                iobs.LLI[f] = src[i].LLI[index] & (LLI_SLIP | LLI_HALFC | LLI_BOCTRK);
-                iobs.S[f] = (float)(src[i].SNR[index] * SNR_UNIT);
-            }
-
-            dst->obs.push_back(iobs);
-            dst->nsat++;
-        }
-        SortGNSSObs_IPSStruct(dst);
-        frq = NULL;
-
-        return;
-    }
-
-    /**
-     * @brief       Convert rtklib eph data to IPS eph data
-     * @note        GLONASS eph is not considered
-     *
-     * @param[in]   eph_t*           src     rtklib eph data
-     * @param[out]  IPS_GPSEPH*      n       IPS eph data
-     *
-     * @return
-     */
-    void Convert_GNSSEphStruct_RTKLIB2IPS(const eph_t *src, IPS_GPSEPH *dst)
-    {
-        ConvertTime(src->toe, &dst->toe);
-        ConvertTime(src->toc, &dst->toc);
-
-        dst->prn = ConvertPrn(src->sat);
-        dst->iode = src->iode;
-        dst->iodc = src->iodc;
-        dst->sva = src->sva;
-        dst->svh = src->svh;
-        dst->week = src->week;
-        dst->code = src->code;
-        dst->A = src->A;
-        dst->e = src->e;
-        dst->i0 = src->i0;
-        dst->OMG0 = src->OMG0;
-        dst->omg = src->omg;
-        dst->M0 = src->M0;
-        dst->deln = src->deln;
-        dst->OMGd = src->OMGd;
-        dst->idot = src->idot;
-        dst->crc = src->crc;
-        dst->crs = src->crs;
-        dst->cuc = src->cuc;
-        dst->cus = src->cus;
-        dst->cic = src->cic;
-        dst->cis = src->cis;
-        dst->toes = src->toes;
-        dst->f0 = src->f0;
-        dst->f1 = src->f1;
-        dst->f2 = src->f2;
-
-        for (int i = 0; i < 4; i++)
-        {
-            dst->tgd[i] = src->tgd[i];
-        }
-    }
-
-    /**
-     * @brief       Convert rtklib nav data to IPS eph data
-     * @note        GLONASS eph is not considered
-     *
-     * @param[in]   nav_t*           src     rtklib eph data
-     * @param[out]  IPS_GPSEPH*      n       IPS eph data
-     *
-     * @return
-     */
-    void Convert_GNSSNavStruct_RTKLIB2IPS(const nav_t *src, IPS_GPSEPH *dst)
-    {
-        if (dst == NULL)
-            return;
-
-        for (int i = 0; i < (src->n - src->ng); i++)
-        {
-            int prn = ConvertPrn(src->eph[i].sat);
-            if (prn < 1 || prn > IPS_NSATMAX)
-                continue;
-
-            IPS_GPSTIME gt;
-            ConvertTime(src->eph[i].toe, &gt);
-            double dt = MinusGPSTIME(gt, dst[prn - 1].toe);
-            if (dt <= 0.0)
-                continue;
-
-            Convert_GNSSEphStruct_RTKLIB2IPS(&src->eph[i], &dst[prn - 1]);
-        }
-    }
-
-}
-
-/**
- * @brief       Convert the GNSS observation data from IPS struct to RobotGVINS struct
- * @note        It is used to process observation data in one epoch
- *
- * @param[in]   IPS_OBSDATA *           ipsdata         observation data in IPS struct
- * @param[in]   RobotGVINS_GNSSObs      robotdata       observation data in RobotGVINS struct
- *
- * @return
- */
-void Convert_GNSSObsStruct_IPS2RobotGVINS(const gnss_common::IPS_OBSDATA *ipsdata, datastreamio::RobotGVINS_GNSSObs &robotdata)
-{
-    if (ipsdata == NULL)
-        return;
-
-    // timestamp
-    robotdata.header.stamp = ros::Time(ipsdata->pubtime);
-    // robotdata.header.stamp = ros::Time(ipsdata->gt.GPSWeek * 604800 + ipsdata->gt.secsOfWeek + ipsdata->gt.fracOfSec);
-
-    // observation info
-    robotdata.flag = ipsdata->flag;
-    robotdata.nsat = ipsdata->nsat;
-    for (int i = 0; i < IPS_NSYS; i++)
-        robotdata.ngnss.push_back(ipsdata->ngnss[i]);
-
-    // observation data for each satellite
-    for (int i = 0; i < ipsdata->obs.size(); i++)
-    {
-        datastreamio::RobotGVINS_GNSSSat sat_msg;
-        sat_msg.prn = ipsdata->obs.at(i).prn;
-        for (int f = 0; f < NFREQ; f++)
-        {
-            sat_msg.cp_meas.push_back(ipsdata->obs.at(i).L[f]);
-            sat_msg.pr_meas.push_back(ipsdata->obs.at(i).P[f]);
-            sat_msg.do_meas.push_back(ipsdata->obs.at(i).D[f]);
-            sat_msg.sig_cno.push_back(ipsdata->obs.at(i).S[f]);
-            sat_msg.code.push_back(ipsdata->obs.at(i).code[f]);
-            sat_msg.SNR.push_back(ipsdata->obs.at(i).SNR[f]);
-            sat_msg.LLI.push_back(ipsdata->obs.at(i).LLI[f]);
-            sat_msg.cs.push_back(ipsdata->obs.at(i).cs[f]);
-            sat_msg.P_TGD.push_back(ipsdata->obs.at(i).P_TGD[f]);
-            sat_msg.SMP.push_back(ipsdata->obs.at(i).SMP[f]);
-        }
-        robotdata.obsdata.push_back(sat_msg);
-    }
-}
-
-/**
- * @brief       Convert the GNSS ephemeris data from IPS struct to RobotGVINS struct
- * @note        It is used to process ephemeris data for only one satellite
- *
- * @param[in]   IPS_GPSEPH *            ipsdata         ephemeris data in IPS struct
- * @param[in]   RobotGVINS_GNSSEph      robotdata       ephemeris data in RobotGVINS struct
- *
- * @return
- */
-void Convert_GNSSEphStruct_IPS2RobotGVINS(const gnss_common::IPS_GPSEPH *ipsdata, datastreamio::RobotGVINS_GNSSEph &robotdata)
-{
-    if (ipsdata == NULL)
-        return;
-
-    // get the ephemeris system
-    int sys = IPS_SYSNON;
-    int prn = ipsdata->prn;                               // GNSS prn in IPS program
-    int sat = gnss_common::satprn2no(prn, &sys);          // GNSS prn for each system
-    robotdata.header.stamp = ros::Time(ipsdata->pubtime); // the timestamp to publish ros message
-
-    // get the data body
-    robotdata.prn = ipsdata->prn;
-    robotdata.iode = ipsdata->iode;
-    robotdata.iodc = ipsdata->iodc;
-    robotdata.sva = ipsdata->sva;
-    robotdata.svh = ipsdata->svh;
-    robotdata.week = ipsdata->week;
-    robotdata.code = ipsdata->code;
-    robotdata.flag = ipsdata->flag;
-    robotdata.toe = ipsdata->toe.GPSWeek * 604800 + ipsdata->toe.secsOfWeek + ipsdata->toe.fracOfSec;
-    robotdata.toc = ipsdata->toc.GPSWeek * 604800 + ipsdata->toc.secsOfWeek + ipsdata->toc.fracOfSec;
-    robotdata.ttr = ipsdata->ttr.GPSWeek * 604800 + ipsdata->ttr.secsOfWeek + ipsdata->ttr.fracOfSec;
-    robotdata.eph_A = ipsdata->A;
-    robotdata.eph_e = ipsdata->e;
-    robotdata.i0 = ipsdata->i0;
-    robotdata.OMG0 = ipsdata->OMG0;
-    robotdata.omg = ipsdata->omg;
-    robotdata.M0 = ipsdata->M0;
-    robotdata.deln = ipsdata->deln;
-    robotdata.OMGd = ipsdata->OMGd;
-    robotdata.idot = ipsdata->idot;
-    robotdata.crc = ipsdata->crc;
-    robotdata.crs = ipsdata->crs;
-    robotdata.cuc = ipsdata->cuc;
-    robotdata.cus = ipsdata->cus;
-    robotdata.cic = ipsdata->cic;
-    robotdata.cis = ipsdata->cis;
-    robotdata.toes = ipsdata->toes;
-    robotdata.fit = ipsdata->fit;
-    robotdata.f0 = ipsdata->f0;
-    robotdata.f1 = ipsdata->f1;
-    robotdata.f2 = ipsdata->f2;
-    for (int i = 0; i < 4; i++)
-        robotdata.tgd[i] = ipsdata->tgd[i];
 }

@@ -236,6 +236,7 @@ add_library(${PROJECT_NAME}_lib
   src/datastream/cmnfunc.cpp
   src/datastream/datain.cpp
   src/datastream/dataout.cpp
+  src/datastream/dataconv.cpp
   src/rtklib/ublox.c
   src/rtklib/rcvraw.c
   src/rtklib/skytraq.c

@@ -1,6 +1,7 @@
-/**
- * @brief
- */
+/** -------------------------------------------------------------------------------------------------------------------------------
+ * @brief     main.cpp: the main function to input and output data stream
+ * @note      Each task is defined by "TODO"
+ * ------------------------------------------------------------------------------------------------------------------------------*/
 
 #include "datastream.h"
 
@@ -13,67 +14,72 @@ int main(int argc, char **argv)
     }
 
     // TODO: extract imu data and write to the bag
-    // step 1: extract imu data from the ros bag file
-    std::string imutopic = "/imu/data";
-    std::list<sensor_msgs::Imu> imudatas(0);
-    std::string infilepath(argv[1]);
-    extract_IMUdata_ROSFormat(infilepath.c_str(), imutopic, imudatas); // extract as ros standard format
-    // step 2: write imu data to the ros bag file
-    imutopic = "/imu/data";
-    std::string outfilepath(argv[2]);
-    write_IMUdata_ROSBag(outfilepath.c_str(), imutopic, imudatas, 1); // write as ros standard format
+    // // step 1: extract imu data from the ros bag file
+    // std::string imutopic_in = dataio_common::VisionRTK2_imu_topic;
+    // std::list<sensor_msgs::Imu> imudatas(0);
+    // dataio_common::Extract_IMUdata_ROSFormat(argv[1], imutopic_in, imudatas);
+    // // step 2: write imu data to the ros bag file
+    // std::string imutopic_out = dataio_common::VisionRTK2_imu_topic;
+    // dataio_common::Write_IMUdata_ROSFormat(argv[2], imutopic_out, imudatas, 1);
 
     // TODO: extract image data and write to the bag
     // // step 1: extract image data from the ros bag file
-    // std::string imgtopic = "/camera/lowres/image";
+    // std::string imgtopic_in = dataio_common::VisionRTK2_image_topic;
     // std::list<sensor_msgs::Image> imgdatas;
-    // std::string infilepath(argv[1]);
-    // extract_ImageData_ROSFormat(infilepath.c_str(), imgtopic, imgdatas); // extract as ros standard format
+    // dataio_common::Extract_ImageData_ROSFormat(argv[1], imgtopic_in, imgdatas);
     // // step 2: write image data to the ros bag file
-    // imgtopic = "/camera/lowres/image";
-    // std::string outfilepath(argv[2]);
-    // write_ImageData_ROSBag(outfilepath.c_str(), imgtopic, imgdatas, 2); // write as ros standard format
+    // std::string imgtopic_out = dataio_common::VisionRTK2_image_topic;
+    // dataio_common::Write_ImageData_ROSFormat(argv[2], imgtopic_out, imgdatas, 2);
 
-    // // TODO: extract gnss solution data and write to bag
-    // // 1. extract gnss solutiion
-    // std::string infilepath(argv[1]);
-    // std::list<rosbagio::RobotGVINS_GNSSSol> gnsssol_datas(0);
-    // extract_GNSSSolData_IPSPOSFMT(infilepath.c_str(), gnsssol_datas);
-    // // extract_GNSSSolData_KAIST_VRSGPS(infilepath.c_str(), KAIST_gnsssol_topic, gnsssol_datas);
-    // // 2. write gnss solution data
-    // std::string outfilepath(argv[2]);
-    // std::string gnsssol_topic = "/gnss/solution";
-    // std::string gimu_topic = "/gnss/solution";
-    // // write_GNSSSolData_ROSFormat2ROSBag(outfilepath.c_str(), KAIST_gnsssol_topic, VisionRTK2_imu_topic, gnsssol_datas, 2);  // write as ros standard format
-    // // write_GNSSSolData_RobotGVINS2ROSBag(outfilepath.c_str(), KAIST_gnsssol_topic, VisionRTK2_imu_topic, gnsssol_datas, 2); // write as RobotGVINS format
-    // write_GNSSSolData_RobotGVINS2ROSBag(outfilepath.c_str(), gnsssol_topic, VisionRTK2_imu_topic, gnsssol_datas, 2);
+    // TODO: extract gnss solution data and write to bag
+    // // step 1. extract gnss solution
+    // std::list<datastreamio::RobotGVINS_GNSSSol> gnsssol_datas(0);
+    // dataio_common::Extract_GNSSSolData_IPSPOSFMT(argv[1], gnsssol_datas);
+    // // step 2. write gnss solution data
+    // std::string gnsssol_topic = dataio_common::RobotGVINS_gnsssol_topic;
+    // std::string imu_topic = dataio_common::RobotGVINS_imu_topic;
+    // dataio_common::Write_GNSSSolData_RobotGVINSFormat(argv[2], gnsssol_topic, imu_topic, gnsssol_datas, 2);
+
+    // TODO: extract gnss solution data and write to bag (ROS standard format)
+    // step 1. extract gnss solution
+    std::list<datastreamio::RobotGVINS_GNSSSol> gnsssol_datas(0);
+    dataio_common::Extract_GNSSSolData_IPSPOSFMT(argv[1], gnsssol_datas);
+    // step 2: convert data format
+    std::list<sensor_msgs::NavSatFix> rosdatas(0);
+    dataio_common::Convert_GNSSSolStruct_Alldata_RobotGVINS2ROSFormat(gnsssol_datas, rosdatas);
+    // step 3. write gnss solution data
+    std::string gnsssol_topic = dataio_common::ROS_gnsssol_topic;
+    std::string imu_topic = dataio_common::RobotGVINS_imu_topic;
+    dataio_common::Write_GNSSSolData_ROSFormat(argv[2], gnsssol_topic, imu_topic, gnsssol_datas, 2);
 
     // TODO: extract gnss observations and ephemeris data and write to the rosbag file
-    // // step 1: extract gnss raw data from the ros bag file (Vision-RTK2 file format)
-    // std::string infilepath(argv[1]);
-    // std::string rostopic = "/gnss1/raw";
-    // std::string imu_topic = "/imu/data";
-    // std::list<gnss_common::IPS_OBSDATA> gnss_obsdata(0);
-    // std::list<gnss_common::IPS_GPSEPH> gnss_ephdata(0);
-    // extract_GNSSRawData_VisionRTK2(infilepath.c_str(), NULL, rostopic, gnss_obsdata, gnss_ephdata);
-    // // // step 2: write the GNSS observations data to bag file with RobotGVINS format
-    // std::string outfilepath(argv[2]); // the filepath to write data
-    // std::string gnss_obstopic_rove = "/gnss/obs/rove";
-    // write_GNSSObsData_IPSStruct2ROSBag(outfilepath.c_str(), gnss_obstopic_rove, imu_topic, gnss_obsdata, 2);
+    // // step 1: extract gnss raw data from the ros bag file
+    // std::string raw_topic = dataio_common::VisionRTK2_gnssraw_topic;
+    // std::string imu_topic = dataio_common::VisionRTK2_imu_topic;
+    // std::list<gnss_common::IPS_OBSDATA> ips_gnssobs(0);
+    // std::list<gnss_common::IPS_GPSEPH> ips_gnsseph(0);
+    // dataio_common::Extract_GNSSObsEphData_VisionRTK2Format(argv[1], NULL, raw_topic, ips_gnssobs, ips_gnsseph);
+    // // step 2: write the GNSS observations data to bag file with RobotGVINS format
+    // std::string gnss_obstopic = dataio_common::RobotGVINS_gnssobs_topic_rove;
+    // std::list<datastreamio::RobotGVINS_GNSSObs> robotdata_gnssobs(0);
+    // dataio_common::Convert_GNSSObsStruct_Alldata_IPS2RobotGVINS(ips_gnssobs, robotdata_gnssobs);
+    // dataio_common::Write_GNSSObsData_RobotGVINSFormat(argv[2], gnss_obstopic, imu_topic, robotdata_gnssobs, 2);
     // // step 3: write the GNSS navigation data to bag file with RobotGVINS format
-    // std::string gnss_ephtopic_rove = "/gnss/ephdata";
-    // write_GNSSEphData_IPSStruct2ROSBag(outfilepath.c_str(), gnss_ephtopic_rove, imu_topic, gnss_ephdata, 2);
+    // std::string gnss_ephtopic = dataio_common::RobotGVINS_gnsseph_topic_rove;
+    // std::list<datastreamio::RobotGVINS_GNSSEph> robotdata_gnsseph(0);
+    // dataio_common::Convert_GNSSEphStruct_Alldata_IPS2RobotGVINS(ips_gnsseph, robotdata_gnsseph);
+    // dataio_common::Write_GNSSEphData_RobotGVINSFormat(argv[2], gnss_ephtopic, imu_topic, robotdata_gnsseph, 2);
 
     // TODO: read gnss rinex format observation file and write to ros bag file
-    // // step 1: use the IPS function and store all observations data in all epochs in IPS struct
-    // std::string infilepath(argv[1]);
-    // std::list<gnss_common::IPS_OBSDATA> gnss_obsdata(0);
-    // extract_GNSSObsData_RINEX3_IPSVersion(infilepath.c_str(), gnss_obsdata);
-    // // step 2: write the GNSS observations data to bag file with custmoized format
-    // std::string outfilepath(argv[2]);
-    // std::string gnss_obstopic_base = "/gnss/obs/base";
-    // std::string imu_topic = "/imu/data";
-    // write_GNSSObsData_IPSStruct2ROSBag(outfilepath.c_str(), gnss_obstopic_base, imu_topic, gnss_obsdata, 2);
+    // // step 1: use the IPS function and store all observations data as IPS struct
+    // std::list<gnss_common::IPS_OBSDATA> ips_gnssobs(0);
+    // dataio_common::Extract_GNSSObsData_RINEX3Format(argv[1], ips_gnssobs);
+    // // step 2: write the GNSS observations data to bag file
+    // std::string imu_topic = dataio_common::VisionRTK2_imu_topic;
+    // std::string gnss_obstopic = dataio_common::RobotGVINS_gnssobs_topic_base;
+    // std::list<datastreamio::RobotGVINS_GNSSObs> robotdata_gnssobs(0);
+    // dataio_common::Convert_GNSSObsStruct_Alldata_IPS2RobotGVINS(ips_gnssobs, robotdata_gnssobs);
+    // dataio_common::Write_GNSSObsData_RobotGVINSFormat(argv[2], gnss_obstopic, imu_topic, robotdata_gnssobs, 2);
 
     return 0;
 }

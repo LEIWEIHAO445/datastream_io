@@ -1,7 +1,9 @@
-/**
- * @brief
+/** -------------------------------------------------------------------------------------------------------------------------------
+ * @brief     datastream.h: the header file defines constants, strcuts, classes and function prototypes
  * @note
- */
+ *
+ * @history   2024/12/18 1.0  datastream_io ver.1.0.0
+ * ------------------------------------------------------------------------------------------------------------------------------*/
 
 #ifndef __ROSBAGINO_HEADER_H__
 #define __ROSBAGINO_HEADER_H__
@@ -14,6 +16,7 @@
 #include <vector>
 #include <list>
 #include <map>
+#include <boost/foreach.hpp>
 #include <Eigen/Core>
 #include <Eigen/Dense>
 #include <opencv2/opencv.hpp>
@@ -26,8 +29,10 @@
 #include <std_msgs/Int32.h>
 #include <std_msgs/UInt8MultiArray.h>
 #include <std_msgs/MultiArrayDimension.h>
+#include <sensor_msgs/Imu.h>
+#include <sensor_msgs/Image.h>
+#include <sensor_msgs/NavSatFix.h>
 #include <geometry_msgs/Quaternion.h>
-#include <boost/foreach.hpp>
 #include <VisionRTK2_GNSSRaw.h>
 #include <VisionRTK2_GNSSEpoch.h>
 #include <VisionRTK2_GNSSRaw.h>
@@ -44,28 +49,49 @@
 #include <GVINS_GNSSTimeMsg.h>
 #include <KAIST_VRSGPS.h>
 #include <KAIST_XsensIMU.h>
-#include "sensor_msgs/Imu.h"
-#include "sensor_msgs/Image.h"
-#include "sensor_msgs/NavSatFix.h"
 #include "rtklib.h"
 
-/***********************************************************************************************
- * The Definition of Constant Variables
- ***********************************************************************************************/
+/**********************************************************************************************************************************
+ *   the definition of constant variables
+ *********************************************************************************************************************************/
 
-// common
-#define foreach BOOST_FOREACH
+// common variables
+#define foreach BOOST_FOREACH                             ///< for traverse
 #define ZeroStruct(x, type) (memset(&x, 0, sizeof(type))) ///< clear struct
+#define IPS_MAXSIZE 1024                                  ///< the max size of variables
+#define IPS_MAXANT 64                                     ///< max length of station name/antenna type
+#define SQR(x) ((x) * (x))                                ///< x*x
+#define IPS_EPSILON 2.2204460492503131e-016               ///< epsilon
+#define IPS_D2R (0.0174532925199432957692369076849)       ///< deg to rad
+#define IPS_R2D (57.295779513082322864647721871734)       ///< rad to deg
+const int GPS_LINUX_TIME = 315964800;                     ///< the time difference between GPS and Linux time
+const int LEAP_SECOND = 18;                               ///< the leap second
+const int GPS_BDS_WEEK = 1356;                            ///< the week difference between GPS and BDS time
+const double GPS_BDS_SECOND = 14.0;                       ///< the second difference between GPS and BDS time
 
-// math
-#define IPS_MAXSIZE 1024                            ///< the max size of variables
-#define IPS_MAXANT 64                               ///< max length of station name/antenna type
-#define SQR(x) ((x) * (x))                          ///< x*x
-#define IPS_EPSILON 2.2204460492503131e-016         ///< epsilon
-#define IPS_D2R (0.0174532925199432957692369076849) ///< deg to rad
-#define IPS_R2D (57.295779513082322864647721871734) ///< rad to deg
+// data stream variables
+namespace dataio_common
+{
 
-// gnss
+    static std::string ROS_gnsssol_topic = "/rosstd/gnsssol";
+
+    static std::string VisionRTK2_imu_topic = "/imu/data";
+    static std::string VisionRTK2_image_topic = "/camera/lowres/image";
+    static std::string VisionRTK2_gnssraw_topic = "/gnss1/raw";
+
+    static std::string KAIST_imu_topic = "/xsens_imu_data";
+    static std::string KAIST_leftimage_topic = "/stereo/left/image_raw";
+    static std::string KAIST_gnsssol_topic = "/vrs_gps_data";
+
+    static std::string RobotGVINS_imu_topic = "/imu/data";
+    static std::string RobotGVINS_gnsssol_topic = "/gnss/solution";
+    static std::string RobotGVINS_gnssobs_topic_rove = "/gnss/obs/rove";
+    static std::string RobotGVINS_gnssobs_topic_base = "/gnss/obs/base";
+    static std::string RobotGVINS_gnsseph_topic_rove = "/gnss/eph/rove";
+    static std::string RobotGVINS_gnsseph_topic_base = "/gnss/eph/base";
+}
+
+// gnss variables
 #define IPS_SYSNON 0x00
 #define IPS_SYSGPS 0x01
 #define IPS_SYSGLO 0x02
@@ -76,6 +102,7 @@
 #define IPS_SYSIRN 0x40
 #define IPS_SYSLEO 0x80
 #define IPS_SYSALL (IPS_SYSGPS | IPS_SYSGLO | IPS_SYSBD2 | IPS_SYSBD3 | IPS_SYSGAL | IPS_SYSQZS)
+
 #define IPS_ISYSNON -1
 #define IPS_ISYSGPS 0
 #define IPS_ISYSGLO 1
@@ -128,25 +155,9 @@ namespace gnss_common
         {0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366}};
 }
 
-// time system
-const int GPS_LINUX_TIME = 315964800;
-const int LEAP_SECOND = 18;
-const int GPS_BDS_WEEK = 1356;
-const double GPS_BDS_SECOND = 14.0;
-
-// ros topic
-static std::string VisionRTK2_imu_topic = "/imu/data";
-static std::string VisionRTK2_image_topic = "/camera/lowres/image";
-static std::string VisionRTK2_gnssraw_topic = "/gnss1/raw";
-static std::string KAIST_imu_topic = "/xsens_imu_data";
-static std::string KAIST_leftimage_topic = "/stereo/left/image_raw";
-static std::string KAIST_gnsssol_topic = "/vrs_gps_data";
-static std::string RobotGVINS_imu_topic = "/imu/data";
-static std::string RobotGVINS_gnsssol_topic = "/gnss/solution";
-
-/***********************************************************************************************
- * The Definition of Class and Struct
- ***********************************************************************************************/
+/**********************************************************************************************************************************
+ *   the definition of strcuts and classes
+ *********************************************************************************************************************************/
 
 namespace gnss_common
 {
@@ -239,7 +250,7 @@ namespace gnss_common
         }
     };
 
-    struct IPS_OBSDATA_t ///< Obs observatino body
+    struct IPS_OBSDATA_t ///< GNSS obs observation body
     {
         int prn;
         double L[NFREQ];          ///< observation data carrier-phase (cycle)
@@ -264,7 +275,7 @@ namespace gnss_common
         }
     };
 
-    struct IPS_OBSDATA // observation data of all epochs
+    struct IPS_OBSDATA ///< GNSS observation data of all epochs
     {
         double pubtime;                 ///< publish time (for ros)
         IPS_GPSTIME gt;                 ///< gps time
@@ -313,14 +324,138 @@ namespace gnss_common
     } IPS_GPSEPH, IPS_BDSEPH, IPS_GALEPH, IPS_QZSEPH;
 }
 
-/***********************************************************************************************
- * The Definition of Function
- ***********************************************************************************************/
+/**********************************************************************************************************************************
+ *   the prototypes of function
+ *********************************************************************************************************************************/
 
-/**
- * @brief       Copy the string from the src to the dst
- */
-void xstrmid(const char *src, const int nPos, const int nCount, char *dst);
+namespace dataio_common
+{
+    /**
+     * @brief       Copy the string from the src to the dst
+     */
+    void xstrmid(const char *src, const int nPos, const int nCount, char *dst);
+
+    /**
+     * @brief       Extract imu data from bag file (ros standard format) and save as ros standard format
+     */
+    extern bool Extract_IMUdata_ROSFormat(const char *bag_infilepath, const std::string &imu_topic, std::list<sensor_msgs::Imu> &imudatas);
+
+    /**
+     * @brief       Extract imu data from bag file (KAIST Xsens format) and save as ros standard format
+     */
+    extern bool Extract_IMUdata_KAISTXsensFormat(const char *bag_infilepath, const std::string &imu_topic, std::list<sensor_msgs::Imu> &imudatas);
+
+    /**
+     * @brief       Extract and store image data from bag file (ros standard format) and save as ros standard format
+     */
+    extern bool Extract_ImageData_ROSFormat(const char *bag_infilepath, const std::string &img_topic, std::list<sensor_msgs::Image> &imgdatas);
+
+    /**
+     * @brief       Extract gnss solution data from the bag file (ros standard format) and save as RobotGVINS format
+     */
+    extern bool Extract_GNSSSolData_ROSFormat(const char *bag_infilepath, const std::string &gnsssol_topic, std::list<datastreamio::RobotGVINS_GNSSSol> &gnsssol_datas);
+
+    /**
+     * @brief       Extract gnss solution data from IPS pos format file and save as RobotGVINS format
+     */
+    extern bool Extract_GNSSSolData_IPSPOSFMT(const char *pos_infilepath, std::list<datastreamio::RobotGVINS_GNSSSol> &gnsssol_datas);
+
+    /**
+     * @brief       Extract gnss solution data from the bag file (KAIST vrs_gps format) and save as RobotGVINS format
+     */
+    extern bool Extract_GNSSSolData_KAISTVRSGPSFormat(const char *bag_infilepath, const std::string &gnsssol_topic, std::list<datastreamio::RobotGVINS_GNSSSol> &gnsssol_datas);
+
+    /**
+     * @brief       Extract gnss observation and ephemris data from the bag file (Vision-RTK2 data format) and save as RobotGVINS format
+     */
+    extern bool Extract_GNSSObsEphData_VisionRTK2Format(const char *bag_infilepath, const char *gnssraw_outfilepath, const std::string &gnssraw_topic, std::list<gnss_common::IPS_OBSDATA> &gnss_obsdata, std::list<gnss_common::IPS_GPSEPH> &gnss_ephdata);
+
+    /**
+     * @brief       Extract gnss epoch data from the bag file (Vision-RTK2 data format) and save as RobotGVINS format
+     */
+    extern bool Extract_GNSSEpochData_VisionRTK2Format(const char *bag_infilepath, const char *gnssepoch_outfilepath, const std::string &gnssepoch_topic);
+
+    /**
+     * @brief       Extract gnss observation data from the rinex 3.0x file and save as IPS struct
+     */
+    extern bool Extract_GNSSObsData_RINEX3Format(const char *rinex_infilepath, std::list<gnss_common::IPS_OBSDATA> &gnss_obsdata);
+
+    /**
+     * @brief       Write imu data to bag file as ros standard foramt
+     */
+    extern bool Write_IMUdata_ROSFormat(const char *bag_outfilepath, const std::string imu_topic, const std::list<sensor_msgs::Imu> &imudatas, int bagmode = 1);
+
+    /**
+     * @brief       Write image data to bag file as ros standard foramt
+     */
+    extern bool Write_ImageData_ROSFormat(const char *bag_outfilepath, const std::string img_topic, const std::list<sensor_msgs::Image> &imgdatas, int bagmode = 1);
+
+    /**
+     * @brief       Write gnss observations data to ros bag file as RobotGVINS format
+     */
+    extern bool Write_GNSSObsData_RobotGVINSFormat(const char *bag_outfilepath, const std::string gnssobs_topic, const std::string imu_topic, const std::list<datastreamio::RobotGVINS_GNSSObs> &gnss_obsdata, int bagmode = 1);
+
+    /**
+     * @brief       Write gnss ephemeris data to ros bag file as RobotGVINS format
+     */
+    extern bool Write_GNSSEphData_RobotGVINSFormat(const char *bag_outfilepath, const std::string gnss_ephtopic, const std::string imu_topic, const std::list<datastreamio::RobotGVINS_GNSSEph> &gnss_ephdata, int bagmode = 1);
+
+    /**
+     * @brief       Write gnss solution data to ros bag file as RobotGVINS format
+     */
+    extern bool Write_GNSSSolData_RobotGVINSFormat(const char *bag_outfilepath, const std::string gnsssol_topic, const std::string imu_topic, const std::list<datastreamio::RobotGVINS_GNSSSol> &gnsssol_datas, int bagmode = 1);
+
+    /**
+     * @brief       Write gnss solution data to ros bag file as ros standard format
+     */
+    extern bool Write_GNSSSolData_ROSFormat(const char *bag_outfilepath, const std::string gnsssol_topic, const std::string imu_topic, const std::list<datastreamio::RobotGVINS_GNSSSol> &gnsssol_datas, int bagmode = 1);
+
+    /**
+     * @brief       Convert one gnss solution data from RobotGVINS format to ROS standard format
+     */
+    extern void Convert_GNSSSolStruct_Onedata_RobotGVINS2ROSFormat(const datastreamio::RobotGVINS_GNSSSol *robotdata, sensor_msgs::NavSatFix &rosdata);
+
+    /**
+     * @brief       Convert one gnss solution data from RobotGVINS format to ROS standard format
+     */
+    extern void Convert_GNSSSolStruct_Alldata_RobotGVINS2ROSFormat(const std::list<datastreamio::RobotGVINS_GNSSSol> &robotdata, std::list<sensor_msgs::NavSatFix> &rosdata);
+
+    /**
+     * @brief       Convert the gnss observation data from rtklib struct to IPS struct
+     */
+    extern void Convert_GNSSObsStruct_RTKLIB2IPS(const obsd_t *src, int n, gnss_common::IPS_OBSDATA *dst);
+
+    /**
+     * @brief       Convert one gnss observation data from IPS struct to RobotGVINS format
+     */
+    extern void Convert_GNSSObsStruct_Onedata_IPS2RobotGVINS(const gnss_common::IPS_OBSDATA *ipsdata, datastreamio::RobotGVINS_GNSSObs &robotdata);
+
+    /**
+     * @brief       Convert all gnss observation data from IPS struct to RobotGVINS format
+     */
+    extern void Convert_GNSSObsStruct_Alldata_IPS2RobotGVINS(const std::list<gnss_common::IPS_OBSDATA> &ipsdata, std::list<datastreamio::RobotGVINS_GNSSObs> &robotdata);
+
+    /**
+     * @brief       Convert rtklib nav data to IPS eph data
+     */
+    extern void Convert_GNSSNavStruct_RTKLIB2IPS(const nav_t *src, gnss_common::IPS_GPSEPH *dst);
+
+    /**
+     * @brief       Convert rtklib eph data to IPS eph data
+     */
+    extern void Convert_GNSSEphStruct_RTKLIB2IPS(const eph_t *src, gnss_common::IPS_GPSEPH *dst);
+
+    /**
+     * @brief       Convert one gnss ephemeris data from IPS struct to RobotGVINS format
+     */
+    extern void Convert_GNSSEphStruct_Onedata_IPS2RobotGVINS(const gnss_common::IPS_GPSEPH *ipsdata, datastreamio::RobotGVINS_GNSSEph &robotdata);
+
+    /**
+     * @brief       Convert all gnss ephemeris data from IPS struct to RobotGVINS format
+     */
+    extern void Convert_GNSSEphStruct_Alldata_IPS2RobotGVINS(const std::list<gnss_common::IPS_GPSEPH> &ipsdata, std::list<datastreamio::RobotGVINS_GNSSEph> &robotdata);
+
+}
 
 // gnss function
 namespace gnss_common
@@ -406,121 +541,6 @@ namespace gnss_common
      */
     void SortGNSSObs_IPSStruct(IPS_OBSDATA *src);
 
-    /**
-     * @brief       Convert the GNSS observation data from rtklib struct to IPS struct
-     */
-    void Convert_GNSSObsStruct_RTKLIB2IPS(const obsd_t *src, int n, IPS_OBSDATA *dst);
-
-    /**
-     * @brief       Convert rtklib eph data to IPS eph data
-     */
-    void Convert_GNSSEphStruct_RTKLIB2IPS(const eph_t *src, IPS_GPSEPH *dst);
-
-    /**
-     * @brief       Convert rtklib nav data to IPS eph data
-     */
-    void Convert_GNSSNavStruct_RTKLIB2IPS(const nav_t *src, IPS_GPSEPH *dst);
-
 }
-
-/**
- * @brief      extract image data from bag file (ros standard format)
- */
-extern bool extract_ImageData_ROSFormat(const char *bag_infilepath, const std::string &img_topic, std::list<sensor_msgs::Image> &imgdatas);
-
-/**
- * @brief      extract IMU data from bag file (ros standard format)
- */
-extern bool extract_IMUdata_ROSFormat(const char *bag_infilepath, const std::string &imu_topic, std::list<sensor_msgs::Imu> &imudatas);
-
-/**
- * @brief      extract IMU data from bag file (KAIST Xsens format) and save as ros standard format
- */
-extern bool extract_IMUdata_KAIST_XsensFormat(const char *bag_infilepath, const std::string &imu_topic, std::list<sensor_msgs::Imu> &imudatas);
-
-/**
- * @brief      extract GNSS solution data from the bag file (HKUST-Aerial-GVINS format) and save as RobotGVINS format
- */
-extern bool extract_GNSSSolData_HKUSTGVINS(const char *bag_infilepath, const std::string &gnsssol_topic, std::list<datastreamio::RobotGVINS_GNSSSol> &gnsssol_datas);
-
-/**
- * @brief      extract GNSS solution data from the bag file (KAIST vrs_gps format) and save as RobotGVINS format
- */
-extern bool extract_GNSSSolData_KAIST_VRSGPS(const char *bag_infilepath, const std::string &gnsssol_topic, std::list<datastreamio::RobotGVINS_GNSSSol> &gnsssol_datas);
-
-/**
- * @brief      extract GNSS solution data from the bag file (ros standard format) and save as RobotGVINS format
- */
-extern bool extract_GNSSSolData_ROSFormat(const char *bag_infilepath, const std::string &gnsssol_topic, std::list<datastreamio::RobotGVINS_GNSSSol> &gnsssol_datas);
-
-/**
- * @brief      extract GNSS solution data from IPS .pos format file and save as RobotGVINS format
- */
-extern bool extract_GNSSSolData_IPSPOSFMT(const char *pos_infilepath, std::list<datastreamio::RobotGVINS_GNSSSol> &gnsssol_datas);
-
-/**
- * @brief      extract GNSS raw data from the bag file (Vision-RTK2 data format) and save as RobotGVINS format
- */
-extern bool extract_GNSSRawData_VisionRTK2(const char *bag_infilepath, const char *gnssraw_outfilepath, const std::string &gnssraw_topic, std::list<gnss_common::IPS_OBSDATA> &gnss_obsdata, std::list<gnss_common::IPS_GPSEPH> &gnss_ephdata);
-
-/**
- * @brief      extract GNSS epoch data from the bag file (Vision-RTK2 data format)
- */
-extern bool extract_GNSSEpochData_VisionRTK2(const char *bag_infilepath, const char *gnssepoch_outfilepath, const std::string &gnssepoch_topic);
-
-/**
- * @brief      extract GNSS observation data from the rinex 3.0x file (IPS version) and save as IPS struct
- */
-extern bool extract_GNSSObsData_RINEX3_IPSVersion(const char *rinex_infilepath, std::list<gnss_common::IPS_OBSDATA> &gnss_obsdata);
-
-/**
- * @brief      write IMU data to bag file
- */
-extern bool write_IMUdata_ROSBag(const char *bag_outfilepath, const std::string imu_topic, const std::list<sensor_msgs::Imu> &imudatas, int bagmode = 1);
-
-/**
- * @brief      write Image data to bag file
- */
-extern bool write_ImageData_ROSBag(const char *bag_outfilepath, const std::string img_topic, const std::list<sensor_msgs::Image> &imgdatas, int bagmode = 1);
-
-/**
- * @brief      write GNSS observations data to ros bag file
- */
-extern bool write_GNSSObsData_IPSStruct2ROSBag(const char *bag_outfilepath, const std::string gnssobs_topic, const std::string imu_topic, const std::list<gnss_common::IPS_OBSDATA> &gnss_obsdata, int bagmode = 1);
-
-/**
- * @brief      write GNSS ephemeris data to ros bag file
- */
-extern bool write_GNSSEphData_IPSStruct2ROSBag(const char *bag_outfilepath, const std::string gnss_ephtopic, const std::string imu_topic, const std::list<gnss_common::IPS_GPSEPH> &gnss_ephdata, int bagmode = 1);
-
-/**
- * @brief      write gnss solution data (RobotGVINS format) to ros bag file (rtos standard format)
- */
-extern bool write_GNSSSolData_ROSFormat2ROSBag(const char *bag_outfilepath, const std::string gnsssol_topic, const std::string imu_topic, const std::list<datastreamio::RobotGVINS_GNSSSol> &gnsssol_datas, int bagmode = 1);
-
-/**
- * @brief      write gnss solution data (RobotGVINS format) to ros bag file (RobotGVINS format)
- */
-extern bool write_GNSSSolData_RobotGVINS2ROSBag(const char *bag_outfilepath, const std::string gnsssol_topic, const std::string imu_topic, const std::list<datastreamio::RobotGVINS_GNSSSol> &gnsssol_datas, int bagmode = 1);
-
-/**
- * @brief      write GNSS observation data to the file (IPS struct)
- */
-extern bool write_GNSSObsData_IPSStruct(FILE *outfile, const gnss_common::IPS_OBSDATA *obsdata);
-
-/**
- * @brief      write GNSS ephemeris data to the file (IPS struct)
- */
-extern bool write_GNSSEphData_IPSStruct(FILE *outfile, const gnss_common::IPS_GPSEPH *ephdata);
-
-/**
- * @brief       Convert the GNSS observation data from IPS struct to RobotGVINS struct
- */
-extern void Convert_GNSSObsStruct_IPS2RobotGVINS(const gnss_common::IPS_OBSDATA *ipsdata, datastreamio::RobotGVINS_GNSSObs &robotdata);
-
-/**
- * @brief       Convert the GNSS ephemeris data from IPS struct to RobotGVINS struct
- */
-extern void Convert_GNSSEphStruct_IPS2RobotGVINS(const gnss_common::IPS_GPSEPH *ipsdata, datastreamio::RobotGVINS_GNSSEph &robotdata);
 
 #endif
